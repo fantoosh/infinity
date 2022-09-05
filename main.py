@@ -1,20 +1,41 @@
+from cgitb import handler
+from unicodedata import name
 import discord
+import logging
 
 from settings import TOKEN
 
+# Set up logging handler
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
-class MyClient(discord.Client):
-    async def on_ready(self):
-        print(f'Logged on as {self.user}!')
+# setting intents
+intents = discord.Intents.all()
 
-    async def on_message(self, message):
-        print(f'Message from {message.author}: {message.content}')
+bot = discord.Bot(debug_guilds=[951434878799446026], intents=intents)
 
-intents = discord.Intents.default()
-intents.message_content = True
+@bot.event
+async def on_ready():
+    print(f"{bot.user} is ready and online!")
 
+@bot.slash_command(name = "hello", description = "Say hello to the bot")
+async def hello(ctx):
+    await ctx.respond("Hey!")
 
-if __name__ == '__main__':
-    client = MyClient(intents=intents)
-    client.run(TOKEN)
+@bot.command()
+async def gtn(ctx):
+    """A Slash Command to play a Guess-the-Number game."""
 
+    await ctx.respond('Guess a number between 1 and 10.')
+    guess = await bot.wait_for('message', check=lambda message: message.author == ctx.author)
+
+    if int(guess.content) == 5:
+        await ctx.send('You guessed it!')
+    else:
+        await ctx.send('Nope, try again.')
+    
+
+bot.run(TOKEN)
